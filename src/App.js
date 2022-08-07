@@ -1,24 +1,9 @@
-import * as React from 'react';
-import {Text, View} from 'react-native';
+import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
-function HomeScreen() {
-  return (
-    <View>
-      <Text>Home!</Text>
-    </View>
-  );
-}
-
-function SettingsScreen() {
-  return (
-    <View>
-      <Text>Settings!</Text>
-    </View>
-  );
-}
+import ServerSceen from './views/Server';
+import SettingScreen from './views/Setting';
 
 const Tab = createBottomTabNavigator();
 
@@ -38,9 +23,10 @@ export default function App() {
           },
           tabBarActiveTintColor: 'tomato',
           tabBarInactiveTintColor: 'gray',
+          headerShown: false,
         })}>
-        <Tab.Screen name="服务器" component={HomeScreen} />
-        <Tab.Screen name="设置" component={SettingsScreen} />
+        <Tab.Screen name="服务器" component={ServerSceen} />
+        <Tab.Screen name="设置" component={SettingScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );

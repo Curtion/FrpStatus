@@ -1,5 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import 'setting_about.dart';
+import 'setting_server.dart';
 
 class Setting extends StatelessWidget {
   const Setting({super.key});
@@ -13,9 +15,8 @@ class Setting extends StatelessWidget {
           title: const Text('服务器列表设置'),
           trailing: const Icon(Icons.arrow_forward_ios),
           onTap: () {
-            if (kDebugMode) {
-              print('服务器列表设置');
-            }
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const ConfigServer()));
           },
         ),
         const Divider(),
@@ -24,9 +25,8 @@ class Setting extends StatelessWidget {
           title: const Text('关于'),
           trailing: const Icon(Icons.arrow_forward_ios),
           onTap: () {
-            if (kDebugMode) {
-              print('关于');
-            }
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const ConfigAbout()));
           },
         ),
         const Divider(),

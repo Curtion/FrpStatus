@@ -26,7 +26,7 @@ class Setting extends StatelessWidget {
           trailing: const Icon(Icons.arrow_forward_ios),
           onTap: () {
             Navigator.push(context,
-                MaterialPageRoute(builder: (context) => const ConfigAbout()));
+                MaterialPageRoute(builder: (context) => ConfigAbout()));
           },
         ),
         const Divider(),

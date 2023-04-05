@@ -1,7 +1,41 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
-class ConfigServer extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'server_add.dart';
+
+class ConfigServer extends StatefulWidget {
   const ConfigServer({super.key});
+
+  @override
+  State<ConfigServer> createState() => _ConfigServer();
+}
+
+class _ConfigServer extends State<ConfigServer> {
+  List<String> _serverList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadServerList();
+  }
+
+  Future<void> _loadServerList() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _serverList = (prefs.getStringList('list') ?? <String>[]);
+      debugPrint('serverList: $_serverList');
+    });
+  }
+
+  Future<void> _delServer(int index) async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _serverList.removeAt(index);
+      prefs.setStringList('list', _serverList);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +47,9 @@ class ConfigServer extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Search',
-            onPressed: () => debugPrint('Search button is pressed.'),
+            onPressed: () {
+              _navigateAndDisplaySelection(context, _loadServerList);
+            },
           ),
         ],
       ),
@@ -22,25 +58,23 @@ class ConfigServer extends StatelessWidget {
           // 服务器列表
           Expanded(
             child: ListView.builder(
-              itemCount: 10,
-              itemBuilder: (BuildContext context, int index) {
+              itemCount: _serverList.length,
+              itemBuilder: (BuildContext contextItemBuilder, int index) {
                 return ListTile(
-                  title: Text('服务器$index'),
-                  subtitle: const Text('服务器地址'),
+                  title: Text(jsonDecode(_serverList[index])['host']),
+                  subtitle: Text(jsonDecode(_serverList[index])['user']),
                   // 删除和编辑服务器
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       IconButton(
                         icon: const Icon(Icons.edit),
-                        onPressed: () {
-                          // 编辑服务器
-                        },
+                        onPressed: () {},
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete),
                         onPressed: () {
-                          // 删除服务器
+                          _delServer(index);
                         },
                       ),
                     ],
@@ -53,4 +87,31 @@ class ConfigServer extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _navigateAndDisplaySelection(
+    BuildContext context, Future<void> Function() loadServerList) async {
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const ServerAdd()),
+  );
+  if (result == null) return;
+
+  final prefs = await SharedPreferences.getInstance();
+  List<String> serverList = prefs.getStringList('list') ?? <String>[];
+  int maxId = 0;
+
+  if (serverList.isNotEmpty) {
+    maxId = serverList
+        .map((e) => int.parse(jsonDecode(e)['id']))
+        .reduce((value, element) => value > element ? value : element);
+  }
+
+  (result as Map<String, String>)['id'] = (maxId + 1).toString();
+  serverList.add(jsonEncode(result));
+  prefs.setStringList('list', serverList);
+
+  // ignore: use_build_context_synchronously
+  if (!context.mounted) return;
+  loadServerList();
 }

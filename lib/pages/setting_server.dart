@@ -69,7 +69,10 @@ class _ConfigServer extends State<ConfigServer> {
                     children: <Widget>[
                       IconButton(
                         icon: const Icon(Icons.edit),
-                        onPressed: () {},
+                        onPressed: () {
+                          _navigateAndDisplaySelection(context, _loadServerList,
+                              server: _serverList[index]);
+                        },
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete),
@@ -90,24 +93,28 @@ class _ConfigServer extends State<ConfigServer> {
 }
 
 Future<void> _navigateAndDisplaySelection(
-    BuildContext context, Future<void> Function() loadServerList) async {
+    BuildContext context, Future<void> Function() loadServerList,
+    {String? server}) async {
   final result = await Navigator.push(
     context,
-    MaterialPageRoute(builder: (context) => const ServerAdd()),
+    MaterialPageRoute(builder: (context) => ServerAdd(server: server)),
   );
   if (result == null) return;
 
   final prefs = await SharedPreferences.getInstance();
   List<String> serverList = prefs.getStringList('list') ?? <String>[];
   int maxId = 0;
-
-  if (serverList.isNotEmpty) {
-    maxId = serverList
-        .map((e) => int.parse(jsonDecode(e)['id']))
-        .reduce((value, element) => value > element ? value : element);
+  String id = (result as Map<String, String>)['id'] ?? '';
+  if (id.isNotEmpty) {
+    serverList.removeWhere((element) => jsonDecode(element)['id'] == id);
+  } else {
+    if (serverList.isNotEmpty) {
+      maxId = serverList
+          .map((e) => int.parse(jsonDecode(e)['id']))
+          .reduce((value, element) => value > element ? value : element);
+    }
+    result['id'] = (maxId + 1).toString();
   }
-
-  (result as Map<String, String>)['id'] = (maxId + 1).toString();
   serverList.add(jsonEncode(result));
   prefs.setStringList('list', serverList);
 

@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 class ServerAdd extends StatefulWidget {
-  const ServerAdd({super.key});
+  final String? server;
+  const ServerAdd({super.key, this.server});
 
   @override
   MyCustomFormState createState() {
@@ -14,13 +17,21 @@ class MyCustomFormState extends State<ServerAdd> {
   final TextEditingController _userController = TextEditingController();
   final TextEditingController _pwdController = TextEditingController();
   final GlobalKey _formKey = GlobalKey<FormState>();
+  var _id = '';
 
   @override
   Widget build(BuildContext context) {
+    if (widget.server != null) {
+      final server = jsonDecode(widget.server!);
+      _hostController.text = server['host'];
+      _userController.text = server['user'];
+      _pwdController.text = server['pwd'];
+      _id = server['id'];
+    }
     return Scaffold(
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          title: const Text('新建服务器'),
+          title: const Text('服务器配置'),
         ),
         body: Form(
           key: _formKey,
@@ -70,7 +81,7 @@ class MyCustomFormState extends State<ServerAdd> {
                       child: ElevatedButton(
                         child: const Padding(
                           padding: EdgeInsets.all(16.0),
-                          child: Text("登录"),
+                          child: Text("保存"),
                         ),
                         onPressed: () {
                           if ((_formKey.currentState as FormState).validate()) {
@@ -78,6 +89,7 @@ class MyCustomFormState extends State<ServerAdd> {
                               'host': _hostController.text,
                               'user': _userController.text,
                               'pwd': _pwdController.text,
+                              'id': _id,
                             });
                           }
                         },

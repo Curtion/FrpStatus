@@ -11,28 +11,67 @@ class StatusPage extends StatefulWidget {
 }
 
 class _StatusPage extends State<StatusPage> {
-  final List<String> _serverList = [];
+  List<String> _serverList = [];
+
+  Future<dynamic> _getInfo(server) async {
+    try {
+      var url = Uri.parse('${server['host']}/api/serverinfo');
+      var response = await http.get(url, headers: {
+        'Authorization':
+            'Basic ${base64Encode(utf8.encode('${server['user']}:${server['pwd']}'))}'
+      });
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('错误'),
+              content: Text(e.toString()),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('确定'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          });
+    }
+  }
+
+  Future<void> _loadServerList() async {
+    final prefs = await SharedPreferences.getInstance();
+    var data = (prefs.getStringList('list') ?? <String>[]);
+    var newServerList = <String>[];
+    for (var element in data) {
+      var value = await _getInfo(jsonDecode(element));
+      debugPrint(value.toString());
+      if (value != null) {
+        var ele = jsonDecode(element);
+        ele['status'] = value;
+        newServerList.add(jsonEncode(ele));
+      }
+    }
+    setState(() {
+      _serverList = newServerList;
+    });
+  }
+
+  String _formatTraffic(int num) {
+    // num 字节
+    return (num / 1024 / 1024).toStringAsFixed(2);
+  }
 
   @override
   void initState() {
     super.initState();
     _loadServerList();
-  }
-
-  Future<void> _loadServerList() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      var data = (prefs.getStringList('list') ?? <String>[]);
-      for (var element in data) {
-        GetFrpStatusInfo(jsonDecode(element)).getInfo().then((value) {
-          if (value != null) {
-            var ele = jsonDecode(element);
-            ele['status'] = value;
-            _serverList.add(jsonEncode(ele));
-          }
-        });
-      }
-    });
   }
 
   @override
@@ -50,10 +89,10 @@ class _StatusPage extends State<StatusPage> {
                   child: Padding(
                       padding: const EdgeInsets.all(19.0),
                       child: Wrap(
-                        spacing: 8.0,
+                        spacing: 12.0,
                         children: [
                           TextField(
-                            style: const TextStyle(fontSize: 20),
+                            style: const TextStyle(fontSize: 12),
                             decoration: const InputDecoration(
                               labelText: '服务器地址',
                               hintText: '服务器地址',
@@ -66,6 +105,8 @@ class _StatusPage extends State<StatusPage> {
                           Text(
                               '版本:${jsonDecode(_serverList[index])['status']['version']}'),
                           Text(
+                              '端口:${jsonDecode(_serverList[index])['status']['bind_port']}'),
+                          Text(
                               '客户端总数:${jsonDecode(_serverList[index])['status']['client_counts'] ?? 0}'),
                           Text(
                               'TCP:${jsonDecode(_serverList[index])['status']['proxy_type_count']['tcp'] ?? 0}'),
@@ -75,6 +116,12 @@ class _StatusPage extends State<StatusPage> {
                               'HTTP:${jsonDecode(_serverList[index])['status']['proxy_type_count']['http'] ?? 0}'),
                           Text(
                               'HTTPS:${jsonDecode(_serverList[index])['status']['proxy_type_count']['https'] ?? 0}'),
+                          Text(
+                              '当前连接:${jsonDecode(_serverList[index])['status']['cur_conns'] ?? 0}'),
+                          Text(
+                              '流入流量:${_formatTraffic(jsonDecode(_serverList[index])['status']['total_traffic_in'] ?? 0)}MB'),
+                          Text(
+                              '流出流量:${_formatTraffic(jsonDecode(_serverList[index])['status']['total_traffic_out'] ?? 0)}MB'),
                         ],
                       )),
                 );
@@ -84,24 +131,5 @@ class _StatusPage extends State<StatusPage> {
         ],
       ),
     );
-  }
-}
-
-class GetFrpStatusInfo {
-  late Map<String, dynamic> server;
-
-  GetFrpStatusInfo(this.server);
-
-  getInfo() async {
-    var url = Uri.parse('${server['host']}/api/serverinfo');
-    var response = await http.get(url, headers: {
-      'Authorization':
-          'Basic ${base64Encode(utf8.encode('${server['user']}:${server['pwd']}'))}'
-    });
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      return null;
-    }
   }
 }
